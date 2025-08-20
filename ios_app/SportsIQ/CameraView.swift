@@ -144,10 +144,28 @@ struct PhotoPicker: UIViewControllerRepresentable {
             
             do {
                 try data.write(to: fileURL)
+                print("PhotoPicker: Created temporary image file: \(fileName)")
                 return fileURL
             } catch {
                 print("Error saving image: \(error)")
                 return nil
+            }
+        }
+        
+        // Cleanup temporary files when picker is dismissed
+        func cleanup() {
+            let tempDir = FileManager.default.temporaryDirectory
+            do {
+                let tempFiles = try FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)
+                
+                for fileURL in tempFiles {
+                    if fileURL.lastPathComponent.hasPrefix("temp_image_") {
+                        try FileManager.default.removeItem(at: fileURL)
+                        print("PhotoPicker: Cleaned up temporary file: \(fileURL.lastPathComponent)")
+                    }
+                }
+            } catch {
+                print("PhotoPicker: Error cleaning up temporary files: \(error)")
             }
         }
         

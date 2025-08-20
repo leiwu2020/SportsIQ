@@ -183,13 +183,31 @@ struct ContentView: View {
                     print("Shooting sequence: \(analysis.shootingSequence == nil ? "nil" : "present")")
                     analysisResult = analysis
                     showingAnalysis = true
+                    
+                    // Cleanup temporary video file after successful analysis
+                    cleanupTemporaryVideoFile(videoURL)
                 case .failure(let error):
                     print("Analysis failed with error: \(error)")
                     print("Error details: \(error.localizedDescription)")
                     // Show error alert in real implementation
                     showingErrorAlert = true
                     errorMessage = error.localizedDescription
+                    
+                    // Cleanup temporary video file even if analysis failed
+                    cleanupTemporaryVideoFile(videoURL)
                 }
+            }
+        }
+    }
+    
+    private func cleanupTemporaryVideoFile(_ videoURL: URL) {
+        // Only cleanup if it's a temporary file we created
+        if videoURL.lastPathComponent.hasPrefix("temp_") {
+            do {
+                try FileManager.default.removeItem(at: videoURL)
+                print("ContentView: Cleaned up temporary video file: \(videoURL.lastPathComponent)")
+            } catch {
+                print("ContentView: Error cleaning up temporary video file: \(error)")
             }
         }
     }

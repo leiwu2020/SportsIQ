@@ -352,21 +352,20 @@ struct AnalysisView: View {
                                 .fontWeight(.semibold)
                             }
                             
-                            // Show the original frame image if available
+                                                        // Show the original frame image if available
                             if let originalFrame = releaseFrame.originalFrame {
                                 VStack(spacing: 10) {
-                                    if let imageData = originalFrame.imageData, let uiImage = UIImage(data: Data(base64Encoded: imageData) ?? Data()) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                        .cornerRadius(12)
+                                    if let imageData = originalFrame.imageData {
+                                        // Use optimized image loading with memory management
+                                        OptimizedImageView(base64ImageData: imageData)
+                                            .frame(maxWidth: .infinity)
+                                            .cornerRadius(12)
                                     } else {
                                         Text("No image data available.")
                                             .foregroundColor(.secondary)
                         .padding()
                                             .frame(maxWidth: .infinity)
-                                            .background(Color.gray.opacity(0.1))
+                        .background(Color.gray.opacity(0.1))
                         .cornerRadius(12)
                                     }
                                     
@@ -634,6 +633,86 @@ struct AnalysisView_Previews: PreviewProvider {
             analysisType: "streamlined_shooter_tracking",
             shootingSequence: nil
         ))
+    }
+}
+
+// MARK: - Optimized Image View for Memory Management
+struct OptimizedImageView: View {
+    let base64ImageData: String
+    @State private var uiImage: UIImage?
+    @State private var isLoading = true
+    @State private var loadError = false
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Loading image...")
+                    .frame(height: 200)
+            } else if let image = uiImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if loadError {
+                Text("Failed to load image")
+                    .foregroundColor(.red)
+                    .frame(height: 200)
+            }
+        }
+        .onAppear {
+            loadImage()
+        }
+            .onDisappear {
+        // Clear image from memory when view disappears
+        uiImage = nil
+        // Force garbage collection to free memory
+        autoreleasepool {
+            // This helps iOS reclaim memory more aggressively
+        }
+    }
+    }
+    
+    private func loadImage() {
+        isLoading = true
+        loadError = false
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let data = Data(base64Encoded: base64ImageData),
+                  let image = UIImage(data: data) else {
+                DispatchQueue.main.async {
+                    self.loadError = true
+                    self.isLoading = false
+                }
+                return
+            }
+            
+            // Resize image to reduce memory usage if it's too large
+            let maxDimension: CGFloat = 800
+            let resizedImage = self.resizeImageIfNeeded(image, maxDimension: maxDimension)
+            
+            DispatchQueue.main.async {
+                self.uiImage = resizedImage
+                self.isLoading = false
+            }
+        }
+    }
+    
+    private func resizeImageIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let widthRatio = maxDimension / size.width
+        let heightRatio = maxDimension / size.height
+        let ratio = min(widthRatio, heightRatio)
+        
+        // Only resize if image is larger than max dimension
+        if ratio < 1.0 {
+            let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+            UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+            return resizedImage ?? image
+        }
+        
+        return image
     }
 }
 
