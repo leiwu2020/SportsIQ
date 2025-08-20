@@ -159,6 +159,73 @@ class NetworkManager: ObservableObject {
         task.resume()
     }
     
+    func reanalyzeVideo(fileId: String, completion: @escaping (Result<AnalysisResult, Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/reanalyze") else {
+            let errorMessage = "Invalid re-analysis URL"
+            completion(.failure(NSError(domain: "URLError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestBody = ["file_id": fileId]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        } catch {
+            let errorMessage = "Failed to create re-analysis request"
+            completion(.failure(NSError(domain: "RequestError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+            return
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Re-analysis network error: \(error)")
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("Invalid response type")
+                let errorMessage = "Invalid response from server"
+                completion(.failure(NSError(domain: "NetworkError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+                return
+            }
+            
+            print("Re-analysis HTTP Status Code: \(httpResponse.statusCode)")
+            
+            guard httpResponse.statusCode == 200 else {
+                print("HTTP Error: Status code \(httpResponse.statusCode)")
+                let errorMessage = "Server returned status code \(httpResponse.statusCode)"
+                completion(.failure(NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+                return
+            }
+            
+            guard let data = data else {
+                print("No data received from re-analysis")
+                let errorMessage = "No data received from server"
+                completion(.failure(NSError(domain: "NetworkError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+                return
+            }
+            
+            print("Re-analysis received \(data.count) bytes of data")
+            
+            do {
+                let analysisResult = try JSONDecoder().decode(AnalysisResult.self, from: data)
+                print("Successfully decoded re-analysis result")
+                completion(.success(analysisResult))
+            } catch {
+                print("Re-analysis decoding error: \(error)")
+                let errorMessage = "Failed to parse re-analysis response"
+                completion(.failure(NSError(domain: "DecodingError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+            }
+        }
+        
+        task.resume()
+    }
+    
     private func createMultipartBody(videoURL: URL, boundary: String) -> Data {
         var body = Data()
         

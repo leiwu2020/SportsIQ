@@ -164,6 +164,16 @@ struct ContentView: View {
         } message: {
             Text(errorMessage)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RedoAnalysis"))) { _ in
+            // Handle re-analysis request
+            if let analysis = analysisResult, let fileId = analysis.fileInfo?.fileId {
+                print("ContentView: Redo analysis requested for file ID: \(fileId)")
+                reanalyzeVideo(fileId: fileId)
+            } else if let videoURL = selectedVideo {
+                print("ContentView: No file ID available, re-uploading video: \(videoURL)")
+                analyzeVideo(videoURL)
+            }
+        }
 
     }
     
@@ -208,6 +218,28 @@ struct ContentView: View {
                 print("ContentView: Cleaned up temporary video file: \(videoURL.lastPathComponent)")
             } catch {
                 print("ContentView: Error cleaning up temporary video file: \(error)")
+            }
+        }
+    }
+    
+    private func reanalyzeVideo(fileId: String) {
+        print("ContentView: Starting re-analysis for file ID: \(fileId)")
+        isAnalyzing = true
+        
+        NetworkManager.shared.reanalyzeVideo(fileId: fileId) { result in
+            DispatchQueue.main.async {
+                isAnalyzing = false
+                switch result {
+                case .success(let analysis):
+                    print("Re-analysis successful! Got result with keys: \(Mirror(reflecting: analysis).children.map { $0.label ?? "unknown" })")
+                    analysisResult = analysis
+                    showingAnalysis = true
+                case .failure(let error):
+                    print("Re-analysis failed with error: \(error)")
+                    print("Error details: \(error.localizedDescription)")
+                    showingErrorAlert = true
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }

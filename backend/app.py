@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import tempfile
 import uuid
+import time
 from werkzeug.utils import secure_filename
 from pose_analyzer import BasketballPoseAnalyzer
 import traceback
@@ -36,6 +37,9 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'message': 'SportsIQ API is running'})
 
+# Store uploaded files for potential re-analysis
+uploaded_files = {}
+
 @app.route('/analyze', methods=['POST'])
 def analyze_shot():
     """
@@ -63,30 +67,93 @@ def analyze_shot():
             # Save uploaded file
             file.save(temp_filepath)
             
+            # Store file info for potential re-analysis
+            file_id = str(uuid.uuid4())
+            uploaded_files[file_id] = {
+                'filepath': temp_filepath,
+                'filename': filename,
+                'file_type': 'video' if is_video_file(filename) else 'image',
+                'upload_time': time.time()
+            }
+            
             # Analyze the file
             if is_video_file(filename):
                 analysis_result = pose_analyzer.analyze_video(temp_filepath)
             else:
                 analysis_result = pose_analyzer.process_image(temp_filepath)
             
-            # Add metadata
+            # Add metadata including file_id for re-analysis
             analysis_result['file_info'] = {
                 'filename': filename,
-                'file_type': 'video' if is_video_file(filename) else 'image'
+                'file_type': 'video' if is_video_file(filename) else 'image',
+                'file_id': file_id
             }
             
             return jsonify(analysis_result)
             
         except Exception as e:
-            return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
-            
-        finally:
-            # Clean up temporary file
+            # Clean up file on error
             if os.path.exists(temp_filepath):
                 os.remove(temp_filepath)
+            return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
     
     except Exception as e:
         app.logger.error(f"Error in analyze_shot: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/reanalyze', methods=['POST'])
+def reanalyze_shot():
+    """
+    Re-analyze a previously uploaded video or image using its file_id
+    """
+    try:
+        data = request.get_json()
+        if not data or 'file_id' not in data:
+            return jsonify({'error': 'No file_id provided'}), 400
+        
+        file_id = data['file_id']
+        if file_id not in uploaded_files:
+            return jsonify({'error': 'File not found or expired'}), 404
+        
+        file_info = uploaded_files[file_id]
+        temp_filepath = file_info['filepath']
+        
+        # Check if file still exists
+        if not os.path.exists(temp_filepath):
+            # Remove from storage and return error
+            del uploaded_files[file_id]
+            return jsonify({'error': 'File no longer available'}), 404
+        
+        # Check if file is not too old (keep for 1 hour)
+        if time.time() - file_info['upload_time'] > 3600:  # 1 hour
+            # Clean up old file
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+            del uploaded_files[file_id]
+            return jsonify({'error': 'File has expired. Please upload again.'}), 410
+        
+        try:
+            # Re-analyze the file
+            if file_info['file_type'] == 'video':
+                analysis_result = pose_analyzer.analyze_video(temp_filepath)
+            else:
+                analysis_result = pose_analyzer.process_image(temp_filepath)
+            
+            # Add metadata
+            analysis_result['file_info'] = {
+                'filename': file_info['filename'],
+                'file_type': file_info['file_type'],
+                'file_id': file_id
+            }
+            
+            return jsonify(analysis_result)
+            
+        except Exception as e:
+            return jsonify({'error': f'Re-analysis failed: {str(e)}'}), 500
+    
+    except Exception as e:
+        app.logger.error(f"Error in reanalyze_shot: {str(e)}")
         app.logger.error(traceback.format_exc())
         return jsonify({'error': 'Internal server error'}), 500
 
@@ -250,14 +317,34 @@ def internal_error(e):
     """Handle internal server error"""
     return jsonify({'error': 'Internal server error'}), 500
 
+def cleanup_old_files():
+    """Clean up old uploaded files"""
+    current_time = time.time()
+    expired_files = []
+    
+    for file_id, file_info in uploaded_files.items():
+        if current_time - file_info['upload_time'] > 3600:  # 1 hour
+            expired_files.append(file_id)
+    
+    for file_id in expired_files:
+        file_info = uploaded_files[file_id]
+        if os.path.exists(file_info['filepath']):
+            os.remove(file_info['filepath'])
+        del uploaded_files[file_id]
+        print(f"Cleaned up expired file: {file_info['filename']}")
+
 if __name__ == '__main__':
     # Create uploads directory if it doesn't exist
     os.makedirs('uploads', exist_ok=True)
+    
+    # Clean up old files on startup
+    cleanup_old_files()
     
     # Run the app
     print("Starting SportsIQ Basketball Analysis API...")
     print("API will be available at: http://localhost:5002")
     print("Health check: http://localhost:5002/health")
     print("Demo analysis: http://localhost:5002/analyze/demo")
+    print("Re-analysis endpoint: http://localhost:5002/reanalyze")
     
     app.run(debug=True, host='0.0.0.0', port=5002)

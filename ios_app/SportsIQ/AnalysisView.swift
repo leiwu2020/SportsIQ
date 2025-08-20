@@ -82,10 +82,12 @@ struct FormAnalysis: Codable {
 struct FileInfo: Codable {
     let filename: String?
     let fileType: String?
+    let fileId: String?
     
     enum CodingKeys: String, CodingKey {
         case filename
         case fileType = "file_type"
+        case fileId = "file_id"
     }
 }
 
@@ -575,17 +577,32 @@ struct AnalysisView: View {
                         }
                     }
                     
-                    // Action Button
-            VStack(spacing: 15) {
+                    // Action Buttons
+                    VStack(spacing: 15) {
+                        // Redo Analysis Button
+                        Button("Redo Analysis") {
+                            // Dismiss current view and trigger re-analysis
+                            presentationMode.wrappedValue.dismiss()
+                            // Post notification to trigger re-analysis
+                            NotificationCenter.default.post(name: NSNotification.Name("RedoAnalysis"), object: nil)
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange)
+                        .cornerRadius(12)
+                        
+                        // Analyze Another Shot Button
                         Button("Analyze Another Shot") {
                             presentationMode.wrappedValue.dismiss()
                         }
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-        .padding()
+                        .padding()
                         .background(Color.blue)
-        .cornerRadius(12)
+                        .cornerRadius(12)
                     }
                     .padding(.top, 20)
                 }
@@ -622,7 +639,7 @@ struct AnalysisView_Previews: PreviewProvider {
             shotPhases: nil,
             formAnalysis: nil,
             recommendations: nil,
-            fileInfo: FileInfo(filename: "test.MOV", fileType: "video"),
+            fileInfo: FileInfo(filename: "test.MOV", fileType: "video", fileId: "preview_id"),
             releaseFrame: nil,
             shooterInfo: nil,
             ballDetectionInfo: nil,
