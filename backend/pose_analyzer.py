@@ -1363,6 +1363,19 @@ class BasketballPoseAnalyzer:
         analysis['release_frame_number'] = analysis['shot_phases'].get('release_point')
         analysis['shooting_sequence'] = None  # Fallback doesn't provide sequence
         
+        # Add ball detection info for consistency
+        analysis['ball_detection_info'] = {
+            'ball_detected': False,  # Fallback mode doesn't detect balls
+            'ball_positions': [],
+            'detection_confidence': 0.0
+        }
+        
+        # Add file info for consistency
+        analysis['file_info'] = {
+            'filename': 'analyzed_video.mp4',
+            'file_type': 'video'
+        }
+        
         return analysis
     
     def _create_comprehensive_release_frame_fallback(self, original_frame: np.ndarray, 
@@ -1371,11 +1384,34 @@ class BasketballPoseAnalyzer:
         Create comprehensive release frame analysis for fallback single-player mode
         """
         try:
-            # Encode the original full frame
-            _, buffer = cv2.imencode('.jpg', original_frame)
-            original_image_data = base64.b64encode(buffer).decode('utf-8')
-            
             height, width = original_frame.shape[:2]
+            
+            # Calculate and draw bounding box on the original frame
+            landmarks = shooter_data.get('landmarks', {})
+            bounding_box = None
+            
+            if landmarks:
+                bounding_box = self._calculate_shooter_bounding_box(landmarks, original_frame.shape)
+                if bounding_box:
+                    # Draw bounding box on the frame
+                    original_frame_with_bbox = self._draw_bounding_box_on_frame(
+                        original_frame.copy(), 
+                        bounding_box, 
+                        0,  # person_id = 0 for single player
+                        "Ball Release"
+                    )
+                    # Encode the frame with bounding box
+                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox)
+                    original_image_data = base64.b64encode(buffer).decode('utf-8')
+                else:
+                    # Fallback: encode original frame without bounding box
+                    _, buffer = cv2.imencode('.jpg', original_frame)
+                    original_image_data = base64.b64encode(buffer).decode('utf-8')
+            else:
+                # No landmarks available, encode original frame
+                _, buffer = cv2.imencode('.jpg', original_frame)
+                original_image_data = base64.b64encode(buffer).decode('utf-8')
+            
             original_frame_info = {
                 'image_data': original_image_data,
                 'width': width,
@@ -1402,7 +1438,8 @@ class BasketballPoseAnalyzer:
                 'frame_number': frame_number,
                 'ball_holder_id': 0,
                 'total_players_detected': 1,
-                'ball_detected': False  # No ball detection in fallback mode
+                'ball_detected': False,  # No ball detection in fallback mode
+                'bounding_box': bounding_box  # Add bounding box information
             }
             
         except Exception as e:
