@@ -65,6 +65,9 @@ class BasketballPoseAnalyzer:
             if not ret:
                 break
             
+            # Store original frame dimensions for landmark transformation
+            original_shape = frame.shape
+            
             # If no rotation detected from metadata, try content-based detection on first frame
             if rotation == 0 and frame_count == 0:
                 content_rotation = self._detect_rotation_from_content(frame)
@@ -89,6 +92,13 @@ class BasketballPoseAnalyzer:
             for person_idx, person_landmarks in enumerate(people_in_frame):
                 if person_landmarks:
                     landmarks_data = self._extract_landmarks(person_landmarks)
+                    
+                    # Transform landmarks if rotation was applied
+                    if rotation != 0:
+                        landmarks_data = self._transform_landmarks_for_rotation(
+                            landmarks_data, original_shape, rotation
+                        )
+                    
                     frame_people_data.append({
                         'person_id': person_idx,
                         'landmarks': landmarks_data,
@@ -187,6 +197,85 @@ class BasketballPoseAnalyzer:
         print(f"Rotated frame from {width}x{height} to {rotated.shape[1]}x{rotated.shape[0]}")
         return rotated
     
+    def _transform_landmarks_for_rotation(self, landmarks: Dict, original_shape: Tuple, rotation: int) -> Dict:
+        """
+        Transform landmark coordinates to match rotated frame
+        """
+        if rotation == 0:
+            return landmarks
+        
+        original_height, original_width = original_shape[:2]
+        transformed_landmarks = {}
+        
+        for landmark_name, landmark_data in landmarks.items():
+            # Get normalized coordinates (0-1)
+            x_norm = landmark_data['x']
+            y_norm = landmark_data['y']
+            
+            # Convert to pixel coordinates
+            x_pixel = x_norm * original_width
+            y_pixel = y_norm * original_height
+            
+            # Apply rotation transformation
+            if rotation == 90:
+                # 90 degrees clockwise: (x, y) -> (y, width-x)
+                new_x = y_pixel
+                new_y = original_width - x_pixel
+                new_width = original_height
+                new_height = original_width
+            elif rotation == 180:
+                # 180 degrees: (x, y) -> (width-x, height-y)
+                new_x = original_width - x_pixel
+                new_y = original_height - y_pixel
+                new_width = original_width
+                new_height = original_height
+            elif rotation == 270:
+                # 270 degrees clockwise: (x, y) -> (height-y, x)
+                new_x = original_height - y_pixel
+                new_y = x_pixel
+                new_width = original_height
+                new_height = original_width
+            else:
+                new_x, new_y = x_pixel, y_pixel
+                new_width, new_height = original_width, original_height
+            
+            # Convert back to normalized coordinates
+            transformed_landmarks[landmark_name] = {
+                'x': new_x / new_width,
+                'y': new_y / new_height,
+                'visibility': landmark_data['visibility']
+            }
+        
+        return transformed_landmarks
+    
+    def _transform_ball_position_for_rotation(self, ball_position: Tuple[int, int, int], original_shape: Tuple, rotation: int) -> Tuple[int, int, int]:
+        """
+        Transform ball position coordinates to match rotated frame
+        """
+        if rotation == 0:
+            return ball_position
+        
+        x, y, radius = ball_position
+        original_height, original_width = original_shape[:2]
+        
+        # Apply rotation transformation
+        if rotation == 90:
+            # 90 degrees clockwise: (x, y) -> (y, width-x)
+            new_x = y
+            new_y = original_width - x
+        elif rotation == 180:
+            # 180 degrees: (x, y) -> (width-x, height-y)
+            new_x = original_width - x
+            new_y = original_height - y
+        elif rotation == 270:
+            # 270 degrees clockwise: (x, y) -> (height-y, x)
+            new_x = original_height - y
+            new_y = x
+        else:
+            return ball_position
+        
+        return (new_x, new_y, radius)
+    
     def _streamlined_shooter_analysis(self, all_frames_data: List[Dict], raw_frames: List = None) -> Dict:
         """
         Streamlined analysis flow:
@@ -268,6 +357,12 @@ class BasketballPoseAnalyzer:
             ball_position = self._detect_basketball(raw_frame)
             if not ball_position:
                 continue
+            
+            # Transform ball position if rotation was applied
+            if rotation != 0:
+                ball_position = self._transform_ball_position_for_rotation(
+                    ball_position, original_shape, rotation
+                )
                 
             # Find person closest to the ball
             ball_holder_id = self._find_ball_holder(frame_data, ball_position, raw_frame.shape[1], raw_frame.shape[0])
