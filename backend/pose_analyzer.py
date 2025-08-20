@@ -1033,15 +1033,15 @@ class BasketballPoseAnalyzer:
                         "Ball Release"
                     )
                     # Encode the frame with bounding box
-                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
                 else:
                     # Fallback: encode original frame without bounding box
-                    _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
             else:
                 # No landmarks available, encode original frame
-                _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                 original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
             
             # 2. Crop ball holder (primary focus)
@@ -1401,15 +1401,15 @@ class BasketballPoseAnalyzer:
                         "Ball Release"
                     )
                     # Encode the frame with bounding box
-                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox)
+                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_image_data = base64.b64encode(buffer).decode('utf-8')
                 else:
                     # Fallback: encode original frame without bounding box
-                    _, buffer = cv2.imencode('.jpg', original_frame)
+                    _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_image_data = base64.b64encode(buffer).decode('utf-8')
             else:
                 # No landmarks available, encode original frame
-                _, buffer = cv2.imencode('.jpg', original_frame)
+                _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                 original_image_data = base64.b64encode(buffer).decode('utf-8')
             
             original_frame_info = {
