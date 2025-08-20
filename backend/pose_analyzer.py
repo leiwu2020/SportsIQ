@@ -543,6 +543,7 @@ class BasketballPoseAnalyzer:
         """
         try:
             height, width = frame_shape[:2]
+            print(f"DEBUG: _calculate_shooter_bounding_box - Frame shape: {width}x{height}")
             
             # Get key body points to define the bounding box
             key_points = []
@@ -555,8 +556,10 @@ class BasketballPoseAnalyzer:
                     x = int(landmark['x'] * width)
                     y = int(landmark['y'] * height)
                     key_points.append((x, y))
+                    print(f"DEBUG: Landmark {landmark_name}: normalized({landmark['x']:.3f}, {landmark['y']:.3f}) -> pixel({x}, {y})")
             
             if len(key_points) < 3:
+                print(f"DEBUG: Not enough visible landmarks ({len(key_points)} < 3)")
                 return None
             
             # Calculate bounding box
@@ -564,6 +567,8 @@ class BasketballPoseAnalyzer:
             max_x = max(point[0] for point in key_points)
             min_y = min(point[1] for point in key_points)
             max_y = max(point[1] for point in key_points)
+            
+            print(f"DEBUG: Raw bounding box: ({min_x}, {min_y}) to ({max_x}, {max_y})")
             
             # Add padding
             padding_x = int((max_x - min_x) * 0.1)
@@ -574,12 +579,15 @@ class BasketballPoseAnalyzer:
             min_y = max(0, min_y - padding_y)
             max_y = min(height, max_y + padding_y)
             
-            return {
+            final_bbox = {
                 'x': min_x,
                 'y': min_y,
                 'width': max_x - min_x,
                 'height': max_y - min_y
             }
+            
+            print(f"DEBUG: Final bounding box: {final_bbox}")
+            return final_bbox
             
         except Exception as e:
             print(f"Error calculating bounding box: {e}")
@@ -1023,8 +1031,15 @@ class BasketballPoseAnalyzer:
             bounding_box = None
             
             if landmarks:
+                # The landmarks are already in the correct coordinate system for the frame
+                # (either original or rotated, depending on what was passed in)
                 bounding_box = self._calculate_shooter_bounding_box(landmarks, original_frame.shape)
+                
                 if bounding_box:
+                    print(f"DEBUG: Calculated bounding box: {bounding_box}")
+                    print(f"DEBUG: Frame dimensions: {width}x{height}")
+                    print(f"DEBUG: Landmarks available: {list(landmarks.keys())}")
+                    
                     # Draw bounding box on the frame
                     original_frame_with_bbox = self._draw_bounding_box_on_frame(
                         original_frame.copy(), 
@@ -1036,10 +1051,12 @@ class BasketballPoseAnalyzer:
                     _, buffer = cv2.imencode('.jpg', original_frame_with_bbox, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
                 else:
+                    print("DEBUG: Failed to calculate bounding box")
                     # Fallback: encode original frame without bounding box
                     _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                     original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
             else:
+                print("DEBUG: No landmarks available for bounding box calculation")
                 # No landmarks available, encode original frame
                 _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                 original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
