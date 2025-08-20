@@ -1018,9 +1018,31 @@ class BasketballPoseAnalyzer:
         try:
             height, width = original_frame.shape[:2]
             
-            # 1. Encode original full frame
-            _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
-            original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
+            # 1. Calculate and draw bounding box on the original frame
+            landmarks = ball_holder_data.get('landmarks', {})
+            bounding_box = None
+            
+            if landmarks:
+                bounding_box = self._calculate_shooter_bounding_box(landmarks, original_frame.shape)
+                if bounding_box:
+                    # Draw bounding box on the frame
+                    original_frame_with_bbox = self._draw_bounding_box_on_frame(
+                        original_frame.copy(), 
+                        bounding_box, 
+                        ball_holder_data.get('ball_holder_id', 0),
+                        "Ball Release"
+                    )
+                    # Encode the frame with bounding box
+                    _, buffer = cv2.imencode('.jpg', original_frame_with_bbox, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
+                else:
+                    # Fallback: encode original frame without bounding box
+                    _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
+            else:
+                # No landmarks available, encode original frame
+                _, buffer = cv2.imencode('.jpg', original_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                original_frame_base64 = base64.b64encode(buffer).decode('utf-8')
             
             # 2. Crop ball holder (primary focus)
             ball_holder_crop = self._crop_single_person(
@@ -1069,7 +1091,8 @@ class BasketballPoseAnalyzer:
                 'frame_number': frame_number,
                 'ball_holder_id': ball_holder_data.get('ball_holder_id', 0),
                 'total_players_detected': len(all_people_data['people']) if all_people_data and 'people' in all_people_data else 1,
-                'ball_detected': 'ball_position' in ball_holder_data
+                'ball_detected': 'ball_position' in ball_holder_data,
+                'bounding_box': bounding_box  # Add bounding box information
             }
             
         except Exception as e:
