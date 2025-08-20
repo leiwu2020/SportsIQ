@@ -52,6 +52,10 @@ class BasketballPoseAnalyzer:
         if not cap.isOpened():
             raise ValueError(f"Cannot open video file: {video_path}")
         
+        # Get video rotation information
+        rotation = self._get_video_rotation(cap)
+        print(f"Detected video rotation from metadata: {rotation} degrees")
+        
         all_frames_data = []  # Store data for all detected people
         raw_frames = []  # Store raw frames for later cropping
         frame_count = 0
@@ -60,6 +64,17 @@ class BasketballPoseAnalyzer:
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            # If no rotation detected from metadata, try content-based detection on first frame
+            if rotation == 0 and frame_count == 0:
+                content_rotation = self._detect_rotation_from_content(frame)
+                if content_rotation != 0:
+                    rotation = content_rotation
+                    print(f"Applied content-based rotation detection: {rotation} degrees")
+                
+            # Correct frame rotation if needed
+            if rotation != 0:
+                frame = self._rotate_frame(frame, rotation)
                 
             # Store raw frame for potential cropping
             raw_frames.append(frame.copy())
@@ -103,6 +118,74 @@ class BasketballPoseAnalyzer:
         # Fallback to original single-player analysis
         print("Falling back to single-player analysis...")
         return self._fallback_single_player_analysis(all_frames_data, raw_frames)
+    
+    def _get_video_rotation(self, cap: cv2.VideoCapture) -> int:
+        """
+        Get the rotation angle from video metadata
+        Returns rotation angle in degrees (0, 90, 180, or 270)
+        """
+        try:
+            # Try to get rotation from video metadata
+            # This works for some video formats that store rotation info
+            rotation = cap.get(cv2.CAP_PROP_ORIENTATION_META)
+            if rotation == 0:
+                # Try alternative method for some video formats
+                rotation = cap.get(cv2.CAP_PROP_ORIENTATION)
+            
+            # Convert to degrees and normalize
+            if rotation == 90:
+                return 90
+            elif rotation == 180:
+                return 180
+            elif rotation == 270:
+                return 270
+            else:
+                return 0
+        except:
+            # If we can't get rotation info, return 0 (no rotation)
+            return 0
+    
+    def _detect_rotation_from_content(self, frame: np.ndarray) -> int:
+        """
+        Detect rotation by analyzing frame content and dimensions
+        This is a fallback method when metadata rotation info is not available
+        """
+        height, width = frame.shape[:2]
+        
+        # If height > width, it's likely a portrait video that needs rotation
+        # Most mobile videos are recorded in portrait mode
+        if height > width:
+            print(f"Detected portrait orientation: {width}x{height}")
+            # Check if this looks like it needs 90-degree rotation
+            # For mobile videos, this is usually the case
+            return 90
+        else:
+            print(f"Detected landscape orientation: {width}x{height}")
+            return 0
+    
+    def _rotate_frame(self, frame: np.ndarray, rotation: int) -> np.ndarray:
+        """
+        Rotate frame by the specified angle
+        """
+        if rotation == 0:
+            return frame
+        
+        height, width = frame.shape[:2]
+        
+        if rotation == 90:
+            # Rotate 90 degrees clockwise
+            rotated = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        elif rotation == 180:
+            # Rotate 180 degrees
+            rotated = cv2.rotate(frame, cv2.ROTATE_180)
+        elif rotation == 270:
+            # Rotate 270 degrees clockwise (same as 90 degrees counter-clockwise)
+            rotated = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else:
+            return frame
+        
+        print(f"Rotated frame from {width}x{height} to {rotated.shape[1]}x{rotated.shape[0]}")
+        return rotated
     
     def _streamlined_shooter_analysis(self, all_frames_data: List[Dict], raw_frames: List = None) -> Dict:
         """
