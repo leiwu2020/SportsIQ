@@ -51,6 +51,41 @@ struct CameraView: UIViewControllerRepresentable {
     }
 }
 
+struct DocumentPicker: UIViewControllerRepresentable {
+    let onVideoSelected: (URL) -> Void
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.movie, .video])
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let parent: DocumentPicker
+        
+        init(_ parent: DocumentPicker) {
+            self.parent = parent
+        }
+        
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            print("DocumentPicker: Selected file: \(url)")
+            parent.onVideoSelected(url)
+        }
+        
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            print("DocumentPicker: Cancelled")
+        }
+    }
+}
+
 struct PhotoPicker: UIViewControllerRepresentable {
     let onVideoSelected: (URL) -> Void
     @Environment(\.presentationMode) var presentationMode
@@ -77,14 +112,22 @@ struct PhotoPicker: UIViewControllerRepresentable {
         }
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let videoURL = info[.mediaURL] as? URL {
-                parent.onVideoSelected(videoURL)
-            } else if let image = info[.originalImage] as? UIImage {
-                // Convert image to temporary file URL
-                if let imageURL = saveImageToTempFile(image) {
-                    parent.onVideoSelected(imageURL)
+            if let mediaType = info[.mediaType] as? String {
+                if mediaType == "public.movie" {
+                    // Handle video selection
+                    if let videoURL = info[.mediaURL] as? URL {
+                        print("PhotoPicker: Video selected with URL: \(videoURL)")
+                        parent.onVideoSelected(videoURL)
+                    }
+                } else if mediaType == "public.image" {
+                    // Handle image selection
+                    if let image = info[.originalImage] as? UIImage,
+                       let imageURL = saveImageToTempFile(image) {
+                        parent.onVideoSelected(imageURL)
+                    }
                 }
             }
+            
             parent.presentationMode.wrappedValue.dismiss()
         }
         
@@ -107,5 +150,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
                 return nil
             }
         }
+        
+
     }
 }

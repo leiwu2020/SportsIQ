@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
+
     @State private var selectedVideo: URL?
     @State private var analysisResult: AnalysisResult?
     @State private var isAnalyzing = false
@@ -11,6 +12,7 @@ struct ContentView: View {
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
     @State private var showingSettings = false
+
     
     // Check if running in simulator
     private var isRunningInSimulator: Bool {
@@ -93,22 +95,6 @@ struct ContentView: View {
                         .cornerRadius(12)
                     }
                     
-                    // Demo Analysis Button
-                    Button(action: {
-                        loadDemoAnalysis()
-                    }) {
-                        HStack {
-                            Image(systemName: "play.circle")
-                            Text("View Demo Analysis")
-                        }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.purple)
-                        .cornerRadius(12)
-                    }
-                    
                     // Perfect Form Guide Button
                     Button(action: {
                         showingFormGuide = true
@@ -145,13 +131,9 @@ struct ContentView: View {
             }
             .navigationTitle("SportsIQ")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingSettings = true }) {
-                        Image(systemName: "gear")
-                    }
-                }
-            }
+            .navigationBarItems(trailing: Button(action: { showingSettings = true }) {
+                Image(systemName: "gear")
+            })
         }
         .sheet(isPresented: $showingCamera) {
             CameraView { videoURL in
@@ -165,6 +147,7 @@ struct ContentView: View {
                 analyzeVideo(videoURL)
             }
         }
+
         .sheet(isPresented: $showingAnalysis) {
             if let result = analysisResult {
                 AnalysisView(analysisResult: result)
@@ -181,6 +164,7 @@ struct ContentView: View {
         } message: {
             Text(errorMessage)
         }
+
     }
     
     private func analyzeVideo(_ videoURL: URL) {
@@ -193,33 +177,16 @@ struct ContentView: View {
                 switch result {
                 case .success(let analysis):
                     print("Analysis successful! Got result with keys: \(Mirror(reflecting: analysis).children.map { $0.label ?? "unknown" })")
+                    print("Analysis type: \(analysis.analysisType ?? "nil")")
+                    print("Is streamlined: \(analysis.isStreamlinedAnalysis)")
+                    print("Is fallback: \(analysis.isFallbackAnalysis)")
+                    print("Shooting sequence: \(analysis.shootingSequence == nil ? "nil" : "present")")
                     analysisResult = analysis
                     showingAnalysis = true
                 case .failure(let error):
                     print("Analysis failed with error: \(error)")
                     print("Error details: \(error.localizedDescription)")
                     // Show error alert in real implementation
-                    showingErrorAlert = true
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func loadDemoAnalysis() {
-        print("Loading demo analysis...")
-        isAnalyzing = true
-        
-        NetworkManager.shared.getDemoAnalysis { result in
-            DispatchQueue.main.async {
-                isAnalyzing = false
-                switch result {
-                case .success(let analysis):
-                    print("Demo analysis successful!")
-                    analysisResult = analysis
-                    showingAnalysis = true
-                case .failure(let error):
-                    print("Demo analysis failed: \(error)")
                     showingErrorAlert = true
                     errorMessage = error.localizedDescription
                 }

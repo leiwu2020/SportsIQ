@@ -173,84 +173,63 @@ def demo_analysis():
     # Create a simple demo image (basketball player silhouette)
     demo_image_base64 = create_demo_release_frame()
     
+    # Create demo shooting sequence frames
+    demo_frames = []
+    frame_phases = [
+        {'name': 'preparation', 'label': 'Preparation Phase', 'frame_num': 9},
+        {'name': 'pre_release', 'label': 'Pre-Release', 'frame_num': 12},
+        {'name': 'release', 'label': 'Ball Release', 'frame_num': 15},
+        {'name': 'follow_through_1', 'label': 'Follow Through 1', 'frame_num': 17},
+        {'name': 'follow_through_2', 'label': 'Follow Through 2', 'frame_num': 19}
+    ]
+    
+    for phase in frame_phases:
+        demo_frame = {
+            'frame_number': phase['frame_num'],
+            'phase_label': phase['label'],
+            'shooter_id': 1,
+            'full_frame_with_bbox': {
+                'image_data': demo_image_base64,
+                'width': 300,
+                'height': 400
+            },
+            'shooter_crop': {
+                'image_data': demo_image_base64,
+                'width': 150,
+                'height': 200
+            },
+            'bounding_box': {
+                'x': 75,
+                'y': 50,
+                'width': 150,
+                'height': 200
+            },
+            'ball_position': {
+                'x': 210,
+                'y': 90,
+                'radius': 12
+            } if phase['name'] in ['preparation', 'pre_release'] else None,
+            'shooter_confidence': 0.95,
+            'phase': phase['name']
+        }
+        demo_frames.append(demo_frame)
+    
+    # New streamlined format
     demo_result = {
-        'shot_phases': {
-            'total_frames': 30,
-            'preparation_phase': (0, 10),
-            'release_point': 15,
-            'follow_through_phase': (16, 29)
+        'shooter_id': 1,
+        'total_frames_analyzed': 30,
+        'shooter_tracked_frames': 25,
+        'release_frame_number': 15,
+        'analysis_type': 'streamlined_shooter_tracking',
+        'shooting_sequence': {
+            'total_frames': len(demo_frames),
+            'frames': demo_frames,
+            'shooter_id': 1,
+            'release_frame_number': 15
         },
-        'form_analysis': {
-            'elbow_alignment': 'good',
-            'elbow_issues': [],
-            'hand_position': 'needs_improvement',
-            'hand_issues': ['hands_too_close'],
-            'body_alignment': 'good',
-            'alignment_issues': [],
-            'follow_through': 'good',
-            'follow_through_issues': []
-        },
-        'recommendations': [
-            "Spread your hands wider on the ball - shooting hand behind, guide hand on the side",
-            "Focus on one technique at a time during practice for best results"
-        ],
         'file_info': {
             'filename': 'demo_shot.mp4',
             'file_type': 'video'
-        },
-        'release_frame': {
-            'original_frame': {
-                'image_data': demo_image_base64,
-                'width': 640,
-                'height': 480
-            },
-            'ball_holder_crop': {
-                'image_data': demo_image_base64,
-                'person_id': 0,
-                'is_ball_holder': True,
-                'crop_coordinates': {
-                    'x': 100,
-                    'y': 50,
-                    'width': 300,
-                    'height': 400
-                },
-                'cropped_size': {'width': 200, 'height': 300}
-            },
-            'all_player_crops': [
-                {
-                    'image_data': demo_image_base64,
-                    'person_id': 1,
-                    'is_ball_holder': False,
-                    'crop_coordinates': {
-                        'x': 350,
-                        'y': 80,
-                        'width': 200,
-                        'height': 300
-                    },
-                    'cropped_size': {'width': 200, 'height': 300}
-                },
-                {
-                    'image_data': demo_image_base64,
-                    'person_id': 2,
-                    'is_ball_holder': False,
-                    'crop_coordinates': {
-                        'x': 50,
-                        'y': 100,
-                        'width': 180,
-                        'height': 280
-                    },
-                    'cropped_size': {'width': 200, 'height': 300}
-                }
-            ],
-            'frame_number': 15,
-            'ball_holder_id': 0,
-            'total_players_detected': 3,
-            'ball_detected': True
-        },
-        'ball_detection_info': {
-            'ball_detected_frames': 25,
-            'total_frames': 30,
-            'ball_holder_frames': 22
         }
     }
     
@@ -277,8 +256,8 @@ if __name__ == '__main__':
     
     # Run the app
     print("Starting SportsIQ Basketball Analysis API...")
-    print("API will be available at: http://localhost:5001")
-    print("Health check: http://localhost:5001/health")
-    print("Demo analysis: http://localhost:5001/analyze/demo")
+    print("API will be available at: http://localhost:5002")
+    print("Health check: http://localhost:5002/health")
+    print("Demo analysis: http://localhost:5002/analyze/demo")
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5002)

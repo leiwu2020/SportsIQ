@@ -176,3 +176,4 @@ curl -X POST -F "file=@shot_video.mp4" http://localhost:5000/analyze
 ## License
 
 This project is for educational and personal use. Please respect applicable licenses for MediaPipe and other dependencies.
+
