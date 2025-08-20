@@ -14,18 +14,20 @@
 		4A1B2C3D4E5F6791 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B2C3D4E5F6792 /* NetworkManager.swift */; };
 		4A1B2C3D4E5F6793 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B2C3D4E5F6794 /* Assets.xcassets */; };
 		4A1B2C3D4E5F67A5 /* ShootingFormGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B2C3D4E5F67A6 /* ShootingFormGuideView.swift */; };
+		4A1B2C3D4E5F67A7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B2C3D4E5F67A8 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		4A1B2C3D4E5F6795 /* SportsIQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportsIQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1B2C3D4E5F678A /* SportsIQApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportsIQApp.swift; sourceTree = "<group>"; };
 		4A1B2C3D4E5F678C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4A1B2C3D4E5F678E /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		4A1B2C3D4E5F6790 /* AnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisView.swift; sourceTree = "<group>"; };
 		4A1B2C3D4E5F6792 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		4A1B2C3D4E5F6794 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4A1B2C3D4E5F6795 /* SportsIQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportsIQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1B2C3D4E5F6796 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A1B2C3D4E5F67A6 /* ShootingFormGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShootingFormGuideView.swift; sourceTree = "<group>"; };
+		4A1B2C3D4E5F67A8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,14 +49,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		4A1B2C3D4E5F679A /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4A1B2C3D4E5F6795 /* SportsIQ.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		4A1B2C3D4E5F6799 /* SportsIQ */ = {
 			isa = PBXGroup;
 			children = (
@@ -64,10 +58,19 @@
 				4A1B2C3D4E5F6790 /* AnalysisView.swift */,
 				4A1B2C3D4E5F6792 /* NetworkManager.swift */,
 				4A1B2C3D4E5F67A6 /* ShootingFormGuideView.swift */,
+				4A1B2C3D4E5F67A8 /* SettingsView.swift */,
 				4A1B2C3D4E5F6794 /* Assets.xcassets */,
 				4A1B2C3D4E5F6796 /* Info.plist */,
 			);
 			path = SportsIQ;
+			sourceTree = "<group>";
+		};
+		4A1B2C3D4E5F679A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4A1B2C3D4E5F6795 /* SportsIQ.app */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -98,7 +101,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					4A1B2C3D4E5F679B = {
 						CreatedOnToolsVersion = 16.0;
@@ -144,6 +147,7 @@
 				4A1B2C3D4E5F678F /* AnalysisView.swift in Sources */,
 				4A1B2C3D4E5F6791 /* NetworkManager.swift in Sources */,
 				4A1B2C3D4E5F67A5 /* ShootingFormGuideView.swift in Sources */,
+				4A1B2C3D4E5F67A7 /* SettingsView.swift in Sources */,
 				4A1B2C3D4E5F6789 /* SportsIQApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -186,6 +190,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MT66HU4K79;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -249,6 +254,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MT66HU4K79;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -277,7 +283,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SportsIQ/Info.plist;
@@ -310,7 +315,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SportsIQ/Info.plist;
@@ -339,20 +343,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4A1B2C3D4E5F67A0 /* Build configuration list for PBXProject "SportsIQ" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4A1B2C3D4E5F67A1 /* Debug */,
-				4A1B2C3D4E5F67A2 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		4A1B2C3D4E5F679C /* Build configuration list for PBXNativeTarget "SportsIQ" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4A1B2C3D4E5F67A3 /* Debug */,
 				4A1B2C3D4E5F67A4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4A1B2C3D4E5F67A0 /* Build configuration list for PBXProject "SportsIQ" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A1B2C3D4E5F67A1 /* Debug */,
+				4A1B2C3D4E5F67A2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

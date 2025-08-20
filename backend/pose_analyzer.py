@@ -643,21 +643,63 @@ class BasketballPoseAnalyzer:
         
         # Capture and crop release frame focusing on the identified shooter
         if raw_frames and analysis['shot_phases'].get('release_point') is not None:
-            if shooter_id is not None:
-                # Use shooter-specific cropping
-                release_frame_data = self._capture_shooter_release_frame(
-                    frames_data, raw_frames, analysis['shot_phases']['release_point'], shooter_id
+            release_point = analysis['shot_phases']['release_point']
+            if release_point < len(raw_frames) and release_point < len(frames_data):
+                # Always use comprehensive release frame for consistency
+                release_frame_data = self._create_comprehensive_release_frame_fallback(
+                    raw_frames[release_point], 
+                    frames_data[release_point], 
+                    release_point
                 )
-            else:
-                # Use original cropping method
-                release_frame_data = self._capture_release_frame(
-                    frames_data, raw_frames, analysis['shot_phases']['release_point']
-                )
-            
-            if release_frame_data:
-                analysis['release_frame'] = release_frame_data
+                
+                if release_frame_data:
+                    analysis['release_frame'] = release_frame_data
         
         return analysis
+    
+    def _create_comprehensive_release_frame_fallback(self, original_frame: np.ndarray, 
+                                                    shooter_data: Dict, frame_number: int) -> Optional[Dict]:
+        """
+        Create comprehensive release frame analysis for fallback single-player mode
+        """
+        try:
+            # Encode the original full frame
+            _, buffer = cv2.imencode('.jpg', original_frame)
+            original_image_data = base64.b64encode(buffer).decode('utf-8')
+            
+            height, width = original_frame.shape[:2]
+            original_frame_info = {
+                'image_data': original_image_data,
+                'width': width,
+                'height': height
+            }
+            
+            # Crop the single player (ball holder)
+            ball_holder_crop = self._crop_single_person(
+                original_frame, 
+                shooter_data['landmarks'], 
+                person_id=0, 
+                is_ball_holder=True
+            )
+            
+            # For single player, all_player_crops is just the one player
+            all_player_crops = []
+            if ball_holder_crop:
+                all_player_crops.append(ball_holder_crop)
+            
+            return {
+                'original_frame': original_frame_info,
+                'ball_holder_crop': ball_holder_crop,
+                'all_player_crops': all_player_crops,
+                'frame_number': frame_number,
+                'ball_holder_id': 0,
+                'total_players_detected': 1,
+                'ball_detected': False  # No ball detection in fallback mode
+            }
+            
+        except Exception as e:
+            print(f"Error creating comprehensive release frame (fallback): {e}")
+            return None
     
     def _identify_shooter_simple(self, all_frames_data: List[Dict]) -> Tuple[Optional[int], List[Dict]]:
         """

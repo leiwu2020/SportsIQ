@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var showingFormGuide = false
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
+    @State private var showingSettings = false
     
     // Check if running in simulator
     private var isRunningInSimulator: Bool {
@@ -29,15 +30,11 @@ struct ContentView: View {
                         .font(.system(size: 60))
                         .foregroundColor(.orange)
                     
-                    Text("SportsIQ")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
                     Text("Analyze Your Basketball Shot")
                         .font(.headline)
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 50)
+                .padding(.top, 20)
                 
                 // Simulator Notice
                 if isRunningInSimulator {
@@ -146,8 +143,15 @@ struct ContentView: View {
                 
                 Spacer()
             }
-            .navigationTitle("")
-            .navigationBarHidden(true)
+            .navigationTitle("SportsIQ")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingSettings = true }) {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showingCamera) {
             CameraView { videoURL in
@@ -168,6 +172,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingFormGuide) {
             ShootingFormGuideView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
         .alert("Analysis Error", isPresented: $showingErrorAlert) {
             Button("OK") { }
