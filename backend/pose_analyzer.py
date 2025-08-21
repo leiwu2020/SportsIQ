@@ -570,6 +570,10 @@ class BasketballPoseAnalyzer:
             
             print(f"DEBUG: Raw bounding box: ({min_x}, {min_y}) to ({max_x}, {max_y})")
             
+            # The landmarks are already in the correct coordinate system for the frame
+            # No need for additional transformations - use coordinates as calculated
+            print(f"DEBUG: Using original coordinates without transformation")
+            
             # Add padding
             padding_x = int((max_x - min_x) * 0.1)
             padding_y = int((max_y - min_y) * 0.1)
@@ -1031,8 +1035,13 @@ class BasketballPoseAnalyzer:
             bounding_box = None
             
             if landmarks:
-                # The landmarks are already in the correct coordinate system for the frame
-                # (either original or rotated, depending on what was passed in)
+                # Ensure landmarks are in the same coordinate system as the frame
+                # If the frame was rotated, landmarks should already be transformed
+                print(f"DEBUG: Frame dimensions: {width}x{height}")
+                print(f"DEBUG: Landmark coordinate system check:")
+                for key, landmark in list(landmarks.items())[:3]:  # Check first 3 landmarks
+                    print(f"  {key}: x={landmark['x']:.3f}, y={landmark['y']:.3f}")
+                
                 bounding_box = self._calculate_shooter_bounding_box(landmarks, original_frame.shape)
                 
                 if bounding_box:
